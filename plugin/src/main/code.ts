@@ -2,6 +2,8 @@ import { serializeNode } from "./serializer";
 import type { SerializableNode } from "./serializer";
 import { addLayersToFrame } from "../html-figma/figma";
 import { getPrototypeConnections, scanPrototype, tracePrototypeFlow } from "./prototype";
+import { handleAdvancedRequest, ADVANCED_EDIT_REQUEST_TYPES } from "./advanced";
+import type { AdvancedRequestType } from "./advanced";
 
 type RequestType =
   | "get_document"
@@ -55,7 +57,8 @@ type RequestType =
   | "remove_animation_style"
   | "apply_manual_keyframe_track"
   | "remove_manual_keyframe_track"
-  | "set_timeline_duration";
+  | "set_timeline_duration"
+  | AdvancedRequestType;
 
 type ServerRequestParams = Record<string, unknown> & {
   format?: "PNG" | "SVG" | "JPG" | "PDF";
@@ -427,6 +430,7 @@ const EDIT_REQUEST_TYPES = new Set<RequestType>([
   "apply_manual_keyframe_track",
   "remove_manual_keyframe_track",
   "set_timeline_duration",
+  ...ADVANCED_EDIT_REQUEST_TYPES,
 ]);
 
 const requireEditorMode = (toolName: RequestType): void => {
@@ -2716,8 +2720,22 @@ const handleRequest = async (request: ServerRequest): Promise<PluginResponse> =>
           },
         };
       }
-      default:
+      default: {
+        const advanced = await handleAdvancedRequest(request as unknown as {
+          type: string;
+          requestId: string;
+          nodeIds?: string[];
+          params?: Record<string, unknown>;
+        });
+        if (advanced !== undefined) {
+          return {
+            type: request.type,
+            requestId: request.requestId,
+            data: advanced,
+          };
+        }
         throw new Error(`Unknown request type: ${request.type}`);
+      }
     }
   } catch (error) {
     return {

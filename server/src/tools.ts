@@ -1117,7 +1117,7 @@ async function loadLayersJson(
   return root as Record<string, unknown>;
 }
 
-async function loadImageSourceAsBase64(source: string, workspaceRoot: string): Promise<string> {
+export async function loadImageSourceAsBase64(source: string, workspaceRoot: string): Promise<string> {
   if (/^https?:\/\//i.test(source)) {
     const bytes = await fetchImageBytes(source);
     return bytes.toString("base64");

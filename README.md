@@ -123,6 +123,61 @@ If you want to know more about how it works, read the [How it works](#how-it-wor
 
 All tools accept an optional `fileKey` parameter when multiple Figma files are connected. Use `list_files` to discover connected files and their keys.
 
+### Inspection & Measurement
+
+| Tool                 | Description                                                                                                                                                                                                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_node_details`   | Deep inspection of one node or page: absolute/local bounds, transforms, rotation, fills/strokes/effects as hex, opacity, blend mode, constraints, corner radii, auto-layout, grids, export settings, style IDs, bound variables/modes, component properties, text segments, and vector paths. `depth` recurses into descendants |
+| `measure_nodes`      | Precise measurement of one or many nodes: document-absolute boxes, local geometry, rotation, constraints, auto-layout, pairwise gaps (negative = overlap), overlap area, containment, and edge/center alignment                                                                                                                 |
+| `find_nodes`         | Search a page or subtree by name (contains/exact/regex) and/or node type; returns IDs, layer paths, and bounds                                                                                                                                                                                                                  |
+| `get_components`     | List every local component and component set with IDs, keys, descriptions, bounds, variants, and property definitions                                                                                                                                                                                                           |
+| `get_image_data`     | Read the image behind an IMAGE paint, or fetch by hash: dimensions and base64 bytes                                                                                                                                                                                                                                             |
+| `get_node_variables` | List every variable bound to a node plus values per mode and the value resolved for that node, and explicit/resolved variable modes                                                                                                                                                                                             |
+
+### Appearance, Layout & Text
+
+| Tool                  | Description                                                                                                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `set_node_appearance` | Batch-patch name, visibility, lock, opacity, blend mode, mask, clipsContent, constraints, corner radii, corner smoothing, min/max size, layout sizing/align/grow/positioning, strokes-in-layout, and grid spans |
+| `set_layout_grids`    | Replace a frame's layout grids (GRID/COLUMNS/ROWS); pass `[]` to clear                                                                                                                                          |
+| `set_export_settings` | Replace a node's export settings (format, scale/size constraints, suffix, SVG options); pass `[]` to clear                                                                                                      |
+| `set_style_reference` | Attach or detach paint/text/effect/grid/background styles on a node                                                                                                                                             |
+| `reorder_nodes`       | Move nodes in the layer/paint order: FRONT, BACK, FORWARD, BACKWARD, INDEX, BEFORE, AFTER                                                                                                                       |
+| `align_nodes`         | Align nodes to the union, their parent, or a reference node (rotation-aware)                                                                                                                                    |
+| `set_image_fill`      | Apply an image fill/stroke from a path, URL, data URI, or existing `imageHash`, with FILL/FIT/CROP/TILE and a 2×3 transform                                                                                     |
+| `set_text_advanced`   | Character-range text editing: characters, font, size, color, letter spacing, line height, case, decoration, hyperlink, paragraph spacing/indent, style ID, alignment, auto-resize, truncation                   |
+
+### Components, Vectors & Design Tokens
+
+| Tool                         | Description                                                                                         |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `create_component`           | Convert an existing node or create a new main component                                             |
+| `create_component_set`       | Combine two or more components into a variant set                                                   |
+| `create_instance`            | Instantiate a component/component set with size, position, parent, and property overrides           |
+| `update_instance`            | Set properties, swap the main component (preserving overrides), reset overrides, or detach          |
+| `add_component_property`     | Add a BOOLEAN, TEXT, INSTANCE_SWAP, VARIANT, or SLOT property with a default                        |
+| `edit_component_property`    | Rename/reconfigure a property, its default, preferred values, or SLOT description                   |
+| `delete_component_property`  | Delete a component property (requires `confirm: true`)                                              |
+| `boolean_operation`          | UNION, SUBTRACT, INTERSECT, or EXCLUDE two or more nodes                                            |
+| `flatten_nodes`              | Flatten nodes into a single editable vector                                                         |
+| `outline_stroke`             | Convert a stroke into an editable vector outline                                                    |
+| `create_vector`              | Create an editable vector from SVG path data, with fill, stroke, size, rotation, and parent         |
+| `set_vector_paths`           | Replace a vector's geometry, optionally resizing and restyling it                                   |
+| `create_style`               | Create a local paint, text, effect, or grid style                                                   |
+| `update_style`               | Update a local style's name, description, and definition                                            |
+| `delete_style`               | Delete a local style (requires `confirm: true`)                                                     |
+| `create_variable_collection` | Create a variable collection with modes and publishing visibility                                   |
+| `create_variable`            | Create a COLOR/FLOAT/STRING/BOOLEAN token with default and per-mode values, description, and scopes |
+| `set_variable_value`         | Set a variable's value for a mode                                                                   |
+| `update_variable`            | Rename a variable, change its description/scopes/visibility, and set per-mode values                |
+| `delete_variable`            | Delete a local variable (requires `confirm: true`)                                                  |
+| `update_variable_collection` | Rename a collection, toggle publishing visibility, add, rename, or remove modes                     |
+| `delete_variable_collection` | Delete a local variable collection and all its variables (requires `confirm: true`)                 |
+| `bind_variable`              | Bind/unbind a variable to a node field or to the color of a specific fill/stroke paint              |
+| `set_variable_mode`          | Set or clear a node's explicit mode for a collection                                                |
+| `set_reactions`              | Write prototype reactions on a node (Figma `Reaction[]`), pass `[]` to clear                        |
+| `update_page`                | Rename a page, switch to it, replace backgrounds, set flow starting points, or delete it            |
+
 ### Prototype Notes
 
 - Prototype tools are read-only and unavailable in FigJam. Set `includePrototype: true` on `get_node` to include the same interactions.
@@ -146,12 +201,24 @@ All tools accept an optional `fileKey` parameter when multiple Figma files are c
 - `create_svg` accepts raw `<svg>` markup or a local SVG path inside the MCP server working directory. SVG payloads are limited to 2 MiB.
 - `import_html_layers` takes a JSON file produced by [html-figma](https://github.com/sergcen/html-to-figma)'s browser `htmlToFigma()`. The path resolves relative to the MCP server working directory and must stay inside it, even when absolute. Everything lands inside one wrapper frame, and the response reports `layerCount` against `expectedLayerCount` so partial imports are visible.
 - `create_page` returns the new page's ID — pass it as `parentId` to `create_frame` / `create_text` / `create_shape` / `create_image` to author content on that page without switching the editor.
+- `get_node_details` returns the same value shapes the write tools accept (`fills`/`strokes` as `{ type, color }` hex summaries from `get_node`; `vectorPaths`, `layoutGrids`, and `exportSettings` are native Figma objects), so inspect-then-write loops stay lossless.
+- `measure_nodes` reports document-absolute boxes (rotation-aware bounding boxes), gaps, overlaps, and alignment flags, which is usually more precise than reading screenshots.
+- `set_text_advanced` loads every font used by the range before editing and also works on empty text nodes when replacing `characters`.
+- `set_image_fill` resolves local paths, HTTP(S) URLs, and data URIs on the server side, then sends the bytes to the plugin; the same path/URL rules as `create_image` apply.
+- `create_vector` / `set_vector_paths` take SVG path data (`{ windingRule, data }`); the plugin rebuilds the geometry natively.
+- `create_component_set` needs at least two COMPONENT nodes; `add_component_property` supports BOOLEAN, TEXT, INSTANCE_SWAP, VARIANT, and SLOT.
+- Variable tools only write local collections/variables; library (remote) styles and variables are read-only and return an explicit error.
+- `update_variable_collection` can add, rename, and remove modes; the collection's default mode cannot be removed.
+- Destructive tools (`delete_style`, `delete_variable`, `delete_variable_collection`, `delete_component_property`, and page deletion via `update_page`) require `confirm: true`.
+- `bind_variable` accepts any field Figma exposes on the node (`fills`, `strokes`, `opacity`, `width`, `cornerRadius`, `itemSpacing`, `fontSize`, ...); use `get_node_variables` to see the exact field names already in use. Pass `variableId: null` to unbind.
+- `set_reactions` expects Figma's own `Reaction[]` shape, including triggers, actions, destination IDs, and variable actions; set `flowStartingPoints` via `update_page`.
+- `update_page` requires `confirm: true` to delete a page and refuses to delete the last remaining page.
 
 ### What You Can Build
 
-With the current write surface, an agent can build a basic slide deck in a new empty Figma file: create slide frames, style titles and body copy, lay out rectangles/ellipses/lines for cards and dividers, duplicate slide templates, reparent content into the right frame, and adjust common geometry/visual properties — including solid/gradient paints, shadows and blurs, stroke geometry, and auto-layout configuration.
+The tool surface covers the full authoring loop, so an agent can inspect and edit a Figma file end to end without the REST API: measure geometry and spacing, read colors/effects/styles as concrete values, build frames and slide decks, author text down to per-character ranges, create and combine vectors, build component/variant libraries with instances and property overrides, create design tokens (variables and modes) and bind them to nodes, wire prototype reactions and flows, and manage pages and exports.
 
-The current version is intentionally limited — no components/instances, no variables/styles authoring, no per-segment text styling, and no vector boolean operations yet.
+Advanced (read-only) inspection — `get_node_details`, `measure_nodes`, `find_nodes`, `get_components`, `get_image_data`, `get_node_variables` — works in the design editor, Dev Mode, and FigJam where the underlying API allows it. Every mutating advanced tool requires the design editor, like the rest of the write surface.
 
 ## Local development
 
@@ -218,9 +285,15 @@ Figma-MCP-Bridge/
         ├── follower.ts   # Follower: proxies to leader via HTTP
         ├── node.ts       # Dynamic leader/follower role switching
         ├── election.ts   # Leader election & health monitoring
-        ├── tools.ts      # MCP tool definitions
+        ├── tools.ts      # Core MCP tool definitions
+        ├── tools-advanced.ts # Advanced MCP tools (measurement, styles, components, variables)
         └── types.ts      # Shared types
 ```
+
+The plugin keeps the request handlers split by concern: `code.ts` holds the core
+switch, and `advanced-read.ts`, `advanced-write.ts`, `advanced-design.ts`, and
+`advanced-shared.ts` implement the advanced surface behind
+`handleAdvancedRequest()`.
 
 ## How it works
 

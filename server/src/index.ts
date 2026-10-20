@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { Node } from "./node.js";
 import { Election } from "./election.js";
 import { registerTools } from "./tools.js";
+import { registerAdvancedTools } from "./tools-advanced.js";
 import { VERSION } from "./version.js";
 
 // Overridable so a fork/test instance can run beside a stock 1994 bridge
@@ -76,6 +77,7 @@ async function main(): Promise<void> {
   });
 
   registerTools(server, node, PORT);
+  registerAdvancedTools(server, node);
 
   console.error(`Starting MCP server (role: ${node.roleName})`);
 

@@ -20,7 +20,10 @@ type SerializedImagePaint = {
   opacity?: number;
 };
 
-type SerializedPaint = SerializedSolidPaint | SerializedGradientPaint | SerializedImagePaint;
+export type SerializedPaint =
+  | SerializedSolidPaint
+  | SerializedGradientPaint
+  | SerializedImagePaint;
 
 // --- Serialized effect types ---
 type SerializedShadowEffect = {
@@ -98,7 +101,7 @@ type SerializedNode = {
 
 const isMixed = (value: unknown): value is symbol => typeof value === "symbol";
 
-const toHex = (color: RGB): string => {
+export const toHex = (color: RGB): string => {
   const clamp = (value: number) => Math.min(255, Math.max(0, Math.round(value * 255)));
   const [r, g, b] = [clamp(color.r), clamp(color.g), clamp(color.b)];
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
@@ -113,7 +116,7 @@ const serializeGradientStops = (
     position: stop.position,
   }));
 
-const serializePaints = (
+export const serializePaints = (
   paints: readonly Paint[] | symbol | undefined
 ): SerializedPaint[] | "mixed" => {
   if (isMixed(paints)) return "mixed";
